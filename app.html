@@ -154,7 +154,7 @@ var ST={
   expBulan:String(new Date().getMonth()+1).padStart(2,'0'),
   expTahun:String(new Date().getFullYear()),
   showImp:false,impStep:'upload',impRaw:[],impHdr:[],impMap:{},impPrev:[],impProg:0,impDone:false,impN:0,
-  wilEdit:false,wDraft:{},ttimer:null
+  wilEdit:false,wDraft:{},ttimer:null,log:[],logTab:'all'
 };
 
 // ── DB ──
@@ -163,37 +163,53 @@ function dbLoad(){
   var colls=['penduduk','mutasi_keluar','mutasi_masuk','lahir','meninggal'];
   var keys=['pend','mk','mm','lh','mn'];
   var done=0;
-  var total=colls.length;
+  var total=colls.length+2; // +config +log
 
-  // Timeout 15 detik — render apapun yang sudah ada
   var loadTimer=setTimeout(function(){
-    if(ST.loading){
-      ST.loading=false;
-      render();
-      toast('Data sebagian dimuat (timeout)','err');
-    }
+    if(ST.loading){ST.loading=false;render();toast('Data sebagian dimuat (timeout)','err');}
   },15000);
+
+  function checkDone(){
+    done++;
+    if(done===total){clearTimeout(loadTimer);ST.loading=false;render();}
+  }
 
   colls.forEach(function(c,i){
     fbDb.collection(c).get().then(function(snap){
       ST[keys[i]]=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
-      done++;
-      if(done===total){
-        clearTimeout(loadTimer);
-        ST.loading=false;
-        render();
-      }
+      checkDone();
     }).catch(function(e){
       ST[keys[i]]=[];
-      done++;
       console.error(c,e);
-      if(done===total){
-        clearTimeout(loadTimer);
-        ST.loading=false;
-        render();
-      }
+      checkDone();
     });
   });
+
+  // Load config wilayah dari Firestore (agar sync antar perangkat/browser)
+  fbDb.collection('config').doc('wilayah').get().then(function(doc){
+    if(doc.exists){
+      ST.wil=doc.data();
+      LS.s('dp_wil',JSON.stringify(ST.wil));
+    }
+    checkDone();
+  }).catch(function(){checkDone();});
+
+  // Load log aktivitas 50 terbaru
+  fbDb.collection('log').orderBy('ts','desc').limit(50).get().then(function(snap){
+    ST.log=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    checkDone();
+  }).catch(function(){ST.log=[];checkDone();});
+}
+
+function dbLog(aksi, keterangan, nikTarget){
+  var entry={
+    aksi:aksi,
+    keterangan:keterangan||'',
+    nik_target:nikTarget||'',
+    oleh:fbUser?fbUser.email:'-',
+    ts:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  fbDb.collection('log').add(entry).catch(function(){});
 }
 
 function dbAdd(col,data){
@@ -415,6 +431,7 @@ async function doImport(){
   }
   ST.impN=done;ST.impDone=true;
   ST.impStep='done';
+  dbLog('import_excel','Import Excel: '+done+' data berhasil diimport');
   render();
   toast(done+' data diimport!');
   // Reload data di background tanpa block UI
@@ -510,7 +527,13 @@ function rModalWil(){
     }).join('')+
     '<div class="pb"><button class="bc" onclick="ST.wilEdit=false;render()">Batal</button><button class="bs" id="_wsave">💾 Simpan</button></div>';
   box.querySelectorAll('input[data-key]').forEach(function(i){i.oninput=function(e){ST.wDraft[e.target.dataset.key]=e.target.value;};});
-  box.querySelector('#_wsave').onclick=function(){ST.wil=Object.assign({},ST.wDraft);LS.s('dp_wil',JSON.stringify(ST.wil));ST.wilEdit=false;render();toast('Wilayah disimpan!');};
+  box.querySelector('#_wsave').onclick=function(){var wilData=Object.assign({},ST.wDraft,{updated_by:fbUser?fbUser.email:'',updated_at:firebase.firestore.FieldValue.serverTimestamp()});
+      fbDb.collection('config').doc('wilayah').set(wilData).then(function(){
+        ST.wil=Object.assign({},ST.wDraft);
+        LS.s('dp_wil',JSON.stringify(ST.wil));
+        dbLog('edit_wilayah','Info wilayah diperbarui: '+wilData.desa);
+        ST.wilEdit=false;render();toast('Wilayah disimpan!');
+      }).catch(function(e){toast('Gagal simpan: '+e.message,'err');});};
   ov.appendChild(box);return ov;
 }
 
@@ -831,6 +854,7 @@ function rPendDetail(wrap){
   '</div>';
   wrap.querySelector('#_del').onclick=function(){
     if(!confirm('Hapus data ini?'))return;
+    dbLog('hapus_penduduk','Hapus data: '+d.nama_lengkap,d.nik);
     dbDel('penduduk',d.id).then(function(){ST.view='list';dbLoad();toast('Dihapus!');}).catch(function(e){toast('Gagal: '+e.message,'err');});
   };
   wrap.querySelector('#_edit').onclick=function(){ST.form=Object.assign({},d);ST.editMode=true;ST.view='form';render();};
@@ -898,6 +922,7 @@ function rPendDetail(wrap){
       try{
         await dbAdd('mutasi_keluar',{nik_target:d.nik,nama:d.nama_lengkap,no_kk:d.no_kk,tujuan:tuj,alasan:al,tanggal:tgl});
         await dbUpd('penduduk',d.id,{status:'mutasi-keluar'});
+        dbLog('mutasi_keluar',d.nama_lengkap+' pindah ke '+tuj,d.nik);
         document.body.removeChild(ov);
         ST.view='list';await dbLoad();
         toast(d.nama_lengkap+' dicatat mutasi keluar ke '+tuj+'.');
@@ -922,6 +947,7 @@ function rPendDetail(wrap){
       if(!tgl){toast('Tanggal wajib!','err');return;}
       try{
         // Simpan hub_asli untuk bisa restore nanti
+        dbLog('meninggal',d.nama_lengkap+' meninggal'+(sb?' ('+sb+')':''),d.nik);
         await dbAdd('meninggal',{nik_target:d.nik,nama:d.nama_lengkap,no_kk:d.no_kk,tanggal:tgl,sebab:sb,hub_asli:d.hubungan_keluarga||''});
         await dbUpd('penduduk',d.id,{status:'meninggal'});
 
@@ -985,7 +1011,7 @@ function rPendForm(wrap){
     try{
       if(ST.editMode&&ST.sel)await dbUpd('penduduk',ST.sel.id,data);
       else await dbAdd('penduduk',data);
-      toast(ST.editMode?'Data diperbarui!':'Data ditambahkan!');
+      dbLog(ST.editMode?'edit_penduduk':'tambah_penduduk',(ST.editMode?'Edit':'Tambah')+' data: '+data.nama_lengkap,data.nik);toast(ST.editMode?'Data diperbarui!':'Data ditambahkan!');
       ST.view='list';await dbLoad();
     }catch(e){toast('Gagal: '+e.message,'err');}
   };
@@ -1160,7 +1186,7 @@ function rMutasi(){
       try{
         await dbAdd('mutasi_keluar',{nik_target:nik,nama:t.nama_lengkap,no_kk:t.no_kk,tujuan:tuj,alasan:al,tanggal:tgl});
         await dbUpd('penduduk',t.id,{status:'mutasi-keluar'});
-        await dbLoad();toast(t.nama_lengkap+' dimutasi keluar!');
+        dbLog('mutasi_keluar',t.nama_lengkap+' pindah ke '+tuj,nik);await dbLoad();toast(t.nama_lengkap+' dimutasi keluar!');
       }catch(e){toast('Gagal: '+e.message,'err');}
     };
     wrap.appendChild(sec);
@@ -1264,7 +1290,7 @@ function rMutasi(){
       try{
         await dbAdd('penduduk',data);
         await dbAdd('mutasi_masuk',Object.assign({},data,{asal_daerah:asal,tanggal:tglmasuk}));
-        await dbLoad();toast('Penduduk masuk berhasil dicatat!');
+        dbLog('mutasi_masuk','Penduduk masuk: '+(data.nama_lengkap||''),data.nik||'');await dbLoad();toast('Penduduk masuk berhasil dicatat!');
       }catch(e){toast('Gagal: '+e.message,'err');}
     };
     wrap.appendChild(sec2);
@@ -1352,7 +1378,7 @@ function rVital(){
       if(!nm||!tgl||!kk){toast('Nama, Tgl & No.KK wajib!','err');return;}
       var nik=g('_lhnik')||('BAYI-'+Date.now());
       var data={no_kk:kk,nik:nik,nama_lengkap:nm,jenis_kelamin:g('_lhjk'),tanggal_lahir:tgl,tempat_lahir:g('_lhtmp'),agama:g('_lhagm'),nama_ibu:g('_lhibu'),nama_ayah:g('_lhayh'),rt:g('_lhrt'),rw:g('_lhrw'),status:'aktif',hubungan_keluarga:'Anak',status_perkawinan:'Belum Kawin'};
-      try{await dbAdd('penduduk',data);await dbAdd('lahir',data);await dbLoad();toast('Kelahiran '+nm+' dicatat & masuk data penduduk!');}
+      try{await dbAdd('penduduk',data);await dbAdd('lahir',data);dbLog('kelahiran','Kelahiran: '+nm,data.nik||'');await dbLoad();toast('Kelahiran '+nm+' dicatat & masuk data penduduk!');}
       catch(e){toast('Gagal: '+e.message,'err');}
     };
     wrap.appendChild(sec);
@@ -1426,7 +1452,7 @@ function rVital(){
       try{
         await dbAdd('meninggal',{nik_target:nik,nama:t.nama_lengkap,no_kk:t.no_kk,tanggal:tgl,sebab:sb});
         await dbUpd('penduduk',t.id,{status:'meninggal'});
-        await dbLoad();toast(t.nama_lengkap+' dicatat meninggal.');
+        dbLog('meninggal',t.nama_lengkap+' meninggal'+(sb?' ('+sb+')':''),nik);await dbLoad();toast(t.nama_lengkap+' dicatat meninggal.');
       }catch(e){toast('Gagal: '+e.message,'err');}
     };
     wrap.appendChild(sec2);
@@ -1556,6 +1582,67 @@ function rSettings(){
   wrap.querySelector('#_lo').onclick=function(){
     firebase.auth().signOut().then(function(){localStorage.clear();window.location.href='index.html';});
   };
+
+  // ── Log Aktivitas ──
+  var logDiv=document.createElement('div');
+  logDiv.style.cssText='margin:8px 13px 0;background:var(--card);border-radius:14px;border:1px solid var(--bd);overflow:hidden';
+  var logHead=document.createElement('div');
+  logHead.style.cssText='padding:11px 14px;border-bottom:1px solid var(--bg);display:flex;justify-content:space-between;align-items:center';
+  logHead.innerHTML='<span style="font-size:13px;font-weight:800;color:var(--tx)">📋 Log Aktivitas</span>'+
+    '<span style="font-size:11px;color:var(--mu)">'+(ST.log||[]).length+' entri</span>';
+  logDiv.appendChild(logHead);
+
+  // Filter chips
+  var logFilter=document.createElement('div');
+  logFilter.style.cssText='padding:8px 14px;border-bottom:1px solid var(--bg);display:flex;gap:5px;flex-wrap:wrap';
+  [
+    {val:'all',lbl:'Semua'},{val:'tambah_penduduk',lbl:'➕ Tambah'},
+    {val:'edit_penduduk',lbl:'✏️ Edit'},{val:'hapus_penduduk',lbl:'🗑️ Hapus'},
+    {val:'mutasi_keluar',lbl:'📤 Keluar'},{val:'mutasi_masuk',lbl:'📥 Masuk'},
+    {val:'kelahiran',lbl:'🍼 Lahir'},{val:'meninggal',lbl:'🕊️ Meninggal'},
+    {val:'import_excel',lbl:'📋 Import'},{val:'edit_wilayah',lbl:'🗺️ Wilayah'},
+  ].forEach(function(fo){
+    var btn=document.createElement('button');
+    var active=ST.logTab===fo.val;
+    btn.style.cssText='border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid '+(active?'var(--ac)':'var(--bd)')+';background:'+(active?'var(--ac)':'var(--bg)')+';color:'+(active?'#fff':'var(--mu)');
+    btn.textContent=fo.lbl;
+    btn.onclick=function(){ST.logTab=fo.val;render();};
+    logFilter.appendChild(btn);
+  });
+  logDiv.appendChild(logFilter);
+
+  // Entries
+  var BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+  var AKSI_IC={tambah_penduduk:'➕',edit_penduduk:'✏️',hapus_penduduk:'🗑️',
+    mutasi_keluar:'📤',mutasi_masuk:'📥',kelahiran:'🍼',meninggal:'🕊️',
+    import_excel:'📋',edit_wilayah:'🗺️'};
+  var logFiltered=(ST.log||[]).filter(function(l){return !ST.logTab||ST.logTab==='all'||l.aksi===ST.logTab;});
+  if(!logFiltered.length){
+    var emptyLog=document.createElement('div');
+    emptyLog.style.cssText='padding:24px;text-align:center;color:var(--mu);font-size:13px';
+    emptyLog.textContent='Belum ada log aktivitas';
+    logDiv.appendChild(emptyLog);
+  }else{
+    logFiltered.forEach(function(l){
+      var row=document.createElement('div');
+      row.style.cssText='padding:10px 14px;border-bottom:1px solid var(--bg)';
+      var ts=l.ts&&l.ts.toDate?l.ts.toDate():null;
+      var tsFmt=ts?(ts.getDate()+' '+BLN[ts.getMonth()]+' '+ts.getFullYear()+
+        ' '+String(ts.getHours()).padStart(2,'0')+':'+String(ts.getMinutes()).padStart(2,'0')):'-';
+      var ic=AKSI_IC[l.aksi]||'📝';
+      row.innerHTML=
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'+
+          '<span style="font-size:12px;font-weight:800;color:var(--ac)">'+ic+' '+(l.aksi||'').replace(/_/g,' ')+'</span>'+
+          '<span style="font-size:10px;color:var(--mu);white-space:nowrap;margin-left:8px">'+tsFmt+'</span>'+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--tx);margin-bottom:2px">'+esc(l.keterangan||'-')+'</div>'+
+        '<div style="font-size:11px;color:var(--mu)">👤 '+esc(l.oleh||'-')+'</div>';
+      logDiv.appendChild(row);
+    });
+  }
+  logDiv.style.marginBottom='100px';
+  wrap.appendChild(logDiv);
+
   return wrap;
 }
 async function doNormPekerjaan(){
