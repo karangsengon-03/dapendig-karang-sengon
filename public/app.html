@@ -266,39 +266,44 @@ function showErr(msg){
 
 // Init Firebase
 var fbDb, fbUser;
+var _appReady = false; // flag: render() sudah dipanggil, timeout tidak perlu tembak
 try{
   setMsg('Init Firebase...');
-  firebase.initializeApp({
-    apiKey:"AIzaSyBoQyPIVSp3iAqElO8H6utBSW90fcHqoNI",
-    authDomain:"dapendig.firebaseapp.com",
-    projectId:"dapendig",
-    storageBucket:"dapendig.firebasestorage.app",
-    messagingSenderId:"400697386418",
-    appId:"1:400697386418:web:855f4984e4b4207ceeb0ab"
-  });
+  // Cegah duplikat initializeApp (firebase-config.js mungkin sudah init)
+  if (!firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey:"AIzaSyBoQyPIVSp3iAqElO8H6utBSW90fcHqoNI",
+      authDomain:"dapendig.firebaseapp.com",
+      projectId:"dapendig",
+      storageBucket:"dapendig.firebasestorage.app",
+      messagingSenderId:"400697386418",
+      appId:"1:400697386418:web:855f4984e4b4207ceeb0ab"
+    });
+  }
   fbDb = firebase.firestore();
-  setMsg('Firebase OK, cek auth...');
+  setMsg('Menghubungkan...');
 }catch(e){showErr('Init Firebase gagal: '+e.message);}
 
 // Auth state
 firebase.auth().onAuthStateChanged(function(user){
   if(user){
     fbUser = user;
-    setMsg('Login OK, load data...');
+    setMsg('Memuat data...');
     dbLoad();
   } else {
-    setMsg('Tidak ada sesi...');
+    setMsg('Sesi tidak ditemukan...');
     setTimeout(function(){window.location.href='index.html';}, 1500);
   }
 });
 
-// Timeout 10 detik
+// Timeout 20 detik — hanya tembak jika render() belum pernah dipanggil
 setTimeout(function(){
-  var lm=document.getElementById('loadmsg');
-  if(lm && lm.textContent.indexOf('OK')===-1 && lm.textContent!==''){
-    showErr('Timeout: '+lm.textContent+'<br>Cek koneksi internet.');
+  if(!_appReady){
+    var lm=document.getElementById('loadmsg');
+    var msg = lm ? lm.textContent : 'tidak diketahui';
+    showErr('Timeout memuat data: '+msg+'<br>Periksa koneksi internet lalu coba lagi.');
   }
-}, 10000);
+}, 20000);
 
 // ── CONSTANTS ──
 var PKJ=["Tidak/Belum Bekerja","Pelajar/Mahasiswa","Petani/Pekebun","Buruh Tani","Buruh Tani Harian Lepas","Nelayan/Perikanan","Peternak","Buruh Perikanan","Buruh Harian Lepas","Buruh Industri","Buruh Bangunan","Karyawan Swasta","Karyawan BUMN","Karyawan BUMD","Karyawan Honorer","Wiraswasta","Pedagang","Pedagang Keliling","Pengrajin","Industri Rumahan","PNS","TNI","POLRI","Pensiunan PNS","Pensiunan TNI/POLRI","Dokter","Bidan","Perawat","Apoteker","Tenaga Medis Lainnya","Guru/Dosen","Arsitek","Akuntan","Konsultan","Notaris/PPAT","Pengacara/Advokat","Wartawan","Seniman","Atlet","Sopir","Ojek/Kurir","Pilot","Pelaut","Ibu Rumah Tangga","Mengurus Rumah Tangga","Asisten Rumah Tangga","Pembantu Rumah Tangga","Baby Sitter","Ustaz/Kiyai","Pendeta","Pastor","Rohaniawan","Perangkat Desa","Kepala Desa","Sekretaris Desa","Pensiunan","Purnawirawan","Pekerja Lepas (Freelance)","Tukang Kayu","Tukang Batu","Tukang Las","Tukang Jahit","Tukang Cukur","Montir","Mekanik","Teknisi","Fotografer","Desainer","Programmer","Peternak Ayam","Peternak Sapi","Peternak Kambing","Pemulung","Satpam/Security","Cleaning Service","Office Boy","Pramuniaga","Kasir","Chef/Koki","Bartender","Pelayan Restoran","Buruh Lepas","Tenaga Kontrak","BPJS","Lainnya"];

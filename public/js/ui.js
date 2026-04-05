@@ -331,6 +331,8 @@ function rDrawer() {
 //  RENDER UTAMA
 // ═══════════════════════════════════════════════════════════════
 function render() {
+  // Tandai app sudah render — matikan timeout checker di app.html
+  if (typeof _appReady !== 'undefined') _appReady = true;
   // Pertama kali → bangun shell
   if (!_shellBuilt) buildShell();
 
@@ -380,7 +382,15 @@ window.addEventListener('appinstalled', function () {
   if (el) el.style.display = 'none';
 });
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(function () {});
+  navigator.serviceWorker.register('sw.js').then(function () {
+    // Dengarkan broadcast SW_UPDATED dari service worker baru
+    // → soft reload otomatis tanpa user perlu hard refresh
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'SW_UPDATED') {
+        window.location.reload();
+      }
+    });
+  }).catch(function () {});
 }
 
 // ═══════════════════════════════════════════════════════════════
