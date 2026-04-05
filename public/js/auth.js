@@ -94,7 +94,11 @@
 
     setLoading(true);
 
-    firebase.auth().signInWithEmailAndPassword(email, pass)
+    // Simpan sesi permanen di browser (tidak hilang walau tab/browser ditutup)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(function () {
+        return firebase.auth().signInWithEmailAndPassword(email, pass);
+      })
       .then(function () {
         // Sukses → redirect ke app.html
         window.location.replace('app.html');

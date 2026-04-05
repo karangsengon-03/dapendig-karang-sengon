@@ -566,11 +566,11 @@ function rDashboard(){
 
   // Header wilayah
   var header=document.createElement('div');
-  header.style.cssText='background:linear-gradient(135deg,#0c1a2e,#0f2744);margin:9px 13px 0;border-radius:14px;padding:18px 16px;border:1px solid #1e3a5f;text-align:center';
-  header.innerHTML='<div style="font-size:11px;color:#7dd3fc;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🏛️ DAPENDIG</div>'+
-    '<div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:4px">'+esc(w.desa||'Nama Desa')+'</div>'+
-    '<div style="font-size:12px;color:#94a3b8">Kec. '+esc(w.kecamatan||'-')+' &nbsp;·&nbsp; Kab. '+esc(w.kabupaten||'-')+'</div>'+
-    '<div style="font-size:11px;color:#64748b;margin-top:3px">'+esc(w.provinsi||'-')+' &nbsp;·&nbsp; Tahun '+esc(w.tahun||'-')+'</div>'
+  header.style.cssText='background:var(--bg-hover);margin:9px 13px 0;border-radius:14px;padding:18px 16px;border:1px solid var(--bd);text-align:center';
+  header.innerHTML='<div style="font-size:11px;color:var(--ac);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">🏛️ DAPENDIG</div>'+
+    '<div style="font-size:20px;font-weight:900;color:var(--tx);margin-bottom:4px">'+esc(w.desa||'Nama Desa')+'</div>'+
+    '<div style="font-size:12px;color:var(--mu)">Kec. '+esc(w.kecamatan||'-')+' &nbsp;·&nbsp; Kab. '+esc(w.kabupaten||'-')+'</div>'+
+    '<div style="font-size:11px;color:var(--mu);margin-top:3px">'+esc(w.provinsi||'-')+' &nbsp;·&nbsp; Tahun '+esc(w.tahun||'-')+'</div>'
   wrap.appendChild(header);
 
   // Statistik utama
@@ -604,10 +604,10 @@ function rDashboard(){
   var nav=document.createElement('div');
   nav.style.cssText='display:flex;align-items:center;gap:4px';
   var prevBtn=document.createElement('button');
-  prevBtn.style.cssText='background:#1f2937;border:1px solid var(--bd);color:var(--ac);border-radius:7px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer';
+  prevBtn.style.cssText='background:var(--bg-hover);border:1px solid var(--bd);color:var(--ac);border-radius:7px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer';
   prevBtn.textContent='‹';
   var nextBtn=document.createElement('button');
-  nextBtn.style.cssText='background:#1f2937;border:1px solid var(--bd);color:var(--ac);border-radius:7px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer';
+  nextBtn.style.cssText='background:var(--bg-hover);border:1px solid var(--bd);color:var(--ac);border-radius:7px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer';
   nextBtn.textContent='›';
   // Cari posisi bulan sekarang di list
   var curIdx=monthList.indexOf(monthStr);
@@ -624,7 +624,7 @@ function rDashboard(){
   };
   // Dropdown pilih bulan
   var selBox=document.createElement('select');
-  selBox.style.cssText='background:#1f2937;border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:4px 6px;font-size:11px;cursor:pointer;max-width:110px';
+  selBox.style.cssText='background:var(--bg-hover);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:4px 6px;font-size:11px;cursor:pointer;max-width:110px';
   (monthList.length?monthList:[monthStr]).forEach(function(m){
     var opt=document.createElement('option');
     opt.value=m;
