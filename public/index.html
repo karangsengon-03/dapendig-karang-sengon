@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DaPenDig — Data Penduduk Digital Desa Karang Sengon" />
+  <meta name="theme-color" content="#0a0f1e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DaPenDig" />
+  <title>DaPenDig — Login</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="login-page">
+
+  <!-- ============================================================
+       LOADING SCREEN
+  ============================================================ -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-inner">
+      <div class="loading-logo">
+        <div class="logo-icon-wrap">
+          <svg class="logo-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ikon rumah + orang (penduduk) -->
+            <circle cx="32" cy="20" r="8" fill="#0ea5e9" opacity="0.9"/>
+            <path d="M16 52 C16 38 48 38 48 52" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M8 30 L32 10 L56 30" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="loading-title">DaPenDig</div>
+        <div class="loading-sub">Data Penduduk Digital</div>
+        <div class="loading-desa">Desa Karang Sengon</div>
+      </div>
+      <div class="spinner-wrap">
+        <div class="spinner"></div>
+      </div>
+      <div class="loading-status" id="loading-status">Menginisialisasi aplikasi…</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       LOGIN SECTION
+  ============================================================ -->
+  <div id="login-section" class="login-section hidden">
+
+    <!-- Background decoration -->
+    <div class="login-bg-orb orb-1"></div>
+    <div class="login-bg-orb orb-2"></div>
+    <div class="login-bg-orb orb-3"></div>
+
+    <div class="login-container">
+
+      <!-- Header logo di atas card -->
+      <div class="login-header">
+        <div class="login-logo-icon">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="20" r="8" fill="#0ea5e9" opacity="0.9"/>
+            <path d="M16 52 C16 38 48 38 48 52" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M8 30 L32 10 L56 30" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+          </svg>
+        </div>
+        <h1 class="login-app-name">DaPenDig</h1>
+        <p class="login-app-desc">Data Penduduk Digital</p>
+        <p class="login-desa-name">Desa Karang Sengon · Klabang · Bondowoso</p>
+      </div>
+
+      <!-- Login Card -->
+      <div class="login-card" id="login-card">
+        <h2 class="login-card-title">Masuk ke Akun</h2>
+
+        <!-- Alert error -->
+        <div class="login-alert hidden" id="login-alert" role="alert">
+          <span id="login-alert-msg">Email atau password salah.</span>
+        </div>
+
+        <!-- Form -->
+        <div class="login-form" id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </span>
+              <input
+                type="email"
+                id="login-email"
+                class="form-input"
+                placeholder="email@desa.go.id"
+                autocomplete="email"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                id="login-password"
+                class="form-input"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Tampilkan/sembunyikan password">
+                <svg id="pw-eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg id="pw-eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="btn-login" id="btn-login">
+            <span id="btn-login-text">Masuk</span>
+            <span id="btn-login-spinner" class="btn-spinner hidden"></span>
+          </button>
+        </div>
+
+        <p class="login-footer-note">
+          Akses terbatas untuk perangkat desa<br/>
+          <span>© 2026 Pemdes Karang Sengon</span>
+        </p>
+      </div>
+
+      <!-- Theme toggle di bawah card -->
+      <div class="login-theme-row">
+        <button class="theme-toggle-btn" id="theme-toggle-login" aria-label="Ganti tema">
+          <span id="theme-icon-login">🌙</span>
+          <span id="theme-label-login">Mode Gelap</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PWA INSTALL BANNER
+  ============================================================ -->
+  <div id="pwa-banner" class="pwa-banner hidden" role="complementary">
+    <div class="pwa-banner-inner">
+      <div class="pwa-icon">📲</div>
+      <div class="pwa-text">
+        <strong>Pasang DaPenDig</strong>
+        <span>Akses lebih cepat tanpa browser</span>
+      </div>
+      <button class="pwa-install-btn" id="pwa-install-btn">Pasang</button>
+      <button class="pwa-close-btn" id="pwa-close-btn" aria-label="Tutup">✕</button>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // -------------------------------------------------------
+    // LOADING SCREEN LOGIC (inline — ringan, tidak perlu file)
+    // -------------------------------------------------------
+    const loadingScreen  = document.getElementById('loading-screen');
+    const loginSection   = document.getElementById('login-section');
+    const loadingStatus  = document.getElementById('loading-status');
+
+    const loadingSteps = [
+      'Menginisialisasi aplikasi…',
+      'Menghubungkan ke Firebase…',
+      'Memeriksa sesi login…'
+    ];
+
+    let stepIdx = 0;
+    const stepInterval = setInterval(() => {
+      stepIdx++;
+      if (stepIdx < loadingSteps.length) {
+        loadingStatus.textContent = loadingSteps[stepIdx];
+      } else {
+        clearInterval(stepInterval);
+      }
+    }, 600);
+
+    // Fungsi dipanggil oleh auth.js setelah cek sesi
+    window.showLogin = function () {
+      clearInterval(stepInterval);
+      loadingScreen.classList.add('fade-out');
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+        loginSection.classList.add('fade-in');
+      }, 400);
+    };
+
+    // -------------------------------------------------------
+    // THEME TOGGLE (login page)
+    // -------------------------------------------------------
+    const savedTheme = localStorage.getItem('dapendig-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeLabel(savedTheme);
+
+    document.getElementById('theme-toggle-login').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next    = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('dapendig-theme', next);
+      updateThemeLabel(next);
+    });
+
+    function updateThemeLabel(theme) {
+      const icon  = document.getElementById('theme-icon-login');
+      const label = document.getElementById('theme-label-login');
+      if (theme === 'dark') {
+        icon.textContent  = '🌙';
+        label.textContent = 'Mode Gelap';
+      } else {
+        icon.textContent  = '☀️';
+        label.textContent = 'Mode Terang';
+      }
+    }
+
+    // -------------------------------------------------------
+    // TOGGLE PASSWORD VISIBILITY
+    // -------------------------------------------------------
+    const togglePw   = document.getElementById('toggle-pw');
+    const pwInput    = document.getElementById('login-password');
+    const eyeShow    = document.getElementById('pw-eye-show');
+    const eyeHide    = document.getElementById('pw-eye-hide');
+
+    togglePw.addEventListener('click', () => {
+      const isHidden = pwInput.type === 'password';
+      pwInput.type   = isHidden ? 'text' : 'password';
+      eyeShow.classList.toggle('hidden', isHidden);
+      eyeHide.classList.toggle('hidden', !isHidden);
+    });
+
+    // ENTER key support
+    document.getElementById('login-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+    document.getElementById('login-email').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('login-password').focus();
+    });
+
+    // -------------------------------------------------------
+    // PWA INSTALL BANNER
+    // -------------------------------------------------------
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const pwaKey = localStorage.getItem('dapendig-pwa-dismissed');
+      if (!pwaKey) {
+        document.getElementById('pwa-banner').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('pwa-install-btn').addEventListener('click', () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        document.getElementById('pwa-banner').classList.add('hidden');
+        deferredPrompt = null;
+      });
+    });
+
+    document.getElementById('pwa-close-btn').addEventListener('click', () => {
+      document.getElementById('pwa-banner').classList.add('hidden');
+      localStorage.setItem('dapendig-pwa-dismissed', '1');
+    });
+
+    // -------------------------------------------------------
+    // SERVICE WORKER
+    // -------------------------------------------------------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

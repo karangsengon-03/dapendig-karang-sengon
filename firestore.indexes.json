@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ts",   "order": "DESCENDING" },
+        { "fieldPath": "aksi", "order": "ASCENDING"  }
+      ]
+    },
+    {
+      "collectionGroup": "penduduk",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "rt",     "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

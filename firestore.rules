@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Lapis 1: hanya UID terdaftar yang bisa masuk sama sekali
+    function isAllowed() {
+      return request.auth != null && request.auth.uid in [
+        'dzQ7vIVsTEbtfgML286w9MmUGqz2',
+        'ZDX7bXzB95hBMv99Q5OxkXwJfmf2',
+        'lZqlErwDKiSWXphAfAcI9uTgQKt2'
+      ];
+    }
+
+    // Lapis 2: role dari koleksi users
+    function role() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isAdmin()    { return isAllowed() && role() == 'admin'; }
+    function isOperator() { return isAllowed() && role() in ['admin','operator']; }
+    function isViewer()   { return isAllowed() && role() in ['admin','operator','viewer']; }
+
+    match /penduduk/{nik} {
+      allow read:          if isViewer();
+      allow create,update: if isOperator();
+      allow delete:        if isAdmin();
+    }
+    match /mutasi_keluar/{id} { allow read: if isViewer(); allow create: if isOperator(); allow update,delete: if isAdmin(); }
+    match /mutasi_masuk/{id}  { allow read: if isViewer(); allow create: if isOperator(); allow update,delete: if isAdmin(); }
+    match /lahir/{id}         { allow read: if isViewer(); allow create: if isOperator(); allow update,delete: if isAdmin(); }
+    match /meninggal/{id}     { allow read: if isViewer(); allow create: if isOperator(); allow update,delete: if isAdmin(); }
+    match /log/{id}           { allow read: if isViewer(); allow create: if isOperator(); allow update,delete: if isAdmin(); }
+    match /config/{doc}       { allow read: if isAllowed(); allow write: if isAdmin(); }
+    match /users/{uid}        { allow read: if isAllowed(); allow write: if isAdmin(); }
+  }
+}
